@@ -1,6 +1,7 @@
 package com.flowershop.order.client;
 
 import com.flowershop.common.api.ApiResponse;
+import com.flowershop.common.client.Idempotent;
 import com.flowershop.common.client.RemoteServiceException;
 import com.flowershop.common.client.ServiceClientFactory;
 import com.flowershop.common.client.ServiceTokenClient;
@@ -35,13 +36,17 @@ public class InventoryClient {
     record Reservation(String orderCode, String status) {
     }
 
+    /** Cả ba idempotent theo orderCode bên inventory: ServiceClientFactory được phép tự thử lại khi inventory chập chờn. */
     interface ReservationApi {
+        @Idempotent
         @PostExchange("/internal/v1/reservations")
         ApiResponse<Reservation> reserve(@RequestBody ReserveBody body);
 
+        @Idempotent
         @PostExchange("/internal/v1/reservations/{orderCode}/confirm")
         ApiResponse<Reservation> confirm(@PathVariable String orderCode);
 
+        @Idempotent
         @PostExchange("/internal/v1/reservations/{orderCode}/release")
         ApiResponse<Reservation> release(@PathVariable String orderCode);
     }

@@ -29,6 +29,7 @@ khách ──POST /api/v1/orders/me (Idempotency-Key)──► order-service
 - **customerId lấy từ token** của khách. Địa chỉ phải thuộc đúng khách đó, nếu không trả `ORD-404-002`.
 - **Idempotency-Key** (bắt buộc): gửi lại cùng key và cùng nội dung trả `200` kèm đơn cũ; cùng key mà khác nội dung trả `ORD-422-001`; hai request cùng key đến cùng lúc thì request sau nhận `ORD-409-002`.
 - **Bù trừ**: lỗi sau bước 3, kể cả timeout không rõ đã giữ hàng chưa, sẽ gọi `release` (idempotent) rồi trả lại key để khách thử lại. Nhả không được thì phiếu giữ cũng tự hết hạn bên inventory.
+- **Circuit breaker + retry** (common-lib): inventory sập thì sau vài đơn đầu (~1s, có thử lại) các đơn sau trả `ORD-503-001` ngay (~30ms), tự thử lại sau 15s. Giữ/xác nhận/nhả hàng có `@Idempotent` nên được thử lại.
 - **Service token**: order-service xin token của chính nó ở identity (client_credentials, `ServiceTokenClient`). Khách không có và không cần quyền `customer:read`, `inventory:reserve`.
 - Không gọi service khác trong lúc đang giữ transaction DB.
 
@@ -82,7 +83,8 @@ Profile `local` đã có sẵn secret khớp với identity, không cần đặt
 
 - Chưa có thanh toán online: đơn là COD, shop xác nhận bằng tay (giai đoạn 3: payment-service).
 - Hết hàng chỉ báo chung `ORD-409-001`, chưa nói SKU nào thiếu (inventory có message chi tiết nhưng client chưa chuyển tiếp).
-- Gọi đồng bộ, chưa có retry/circuit breaker (Resilience4j); giai đoạn sau chuyển sang sự kiện + outbox.
+- Gọi đồng bộ (có circuit breaker + retry của `ServiceClientFactory`); giai đoạn sau chuyển sang sự kiện + outbox.
+- Giữ hàng thử lại khi inventory chập chờn: nếu lần đầu đã tới inventory nhưng timeout, lần thử lại nhận `INV-409-004` (đang xử lý) và đơn được bù trừ; phiếu giữ của lần đầu (nếu có) tự hết hạn sau 70 phút.
 
 ## Chạy
 
