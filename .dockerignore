@@ -1,0 +1,3 @@
+# Chỉ gửi file jar vào Docker build, bỏ qua mọi thứ khác (mã nguồn, .git, ...)
+*
+!target/*.jar

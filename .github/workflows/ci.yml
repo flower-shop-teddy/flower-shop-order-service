@@ -1,0 +1,22 @@
+# CI: build + test (lấy parent/common-lib từ GitHub Packages) và kiểm tra commit message.
+# Toàn bộ logic nằm ở repo flower-shop-platform (reusable workflow), sửa một chỗ áp dụng cho mọi service.
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev, production]
+
+jobs:
+  ci:
+    permissions:
+      contents: read
+      packages: read   # đọc flower-shop-parent / common-lib trên GitHub Packages
+    uses: flower-shop-teddy/flower-shop-platform/.github/workflows/maven-ci.yml@dev
+
+  commit-lint:
+    if: github.event_name == 'push' || github.base_ref == 'dev'
+    permissions:
+      contents: read
+    uses: flower-shop-teddy/flower-shop-platform/.github/workflows/commit-lint.yml@dev

@@ -1,0 +1,99 @@
+# Cấu hình CHUNG cho mọi môi trường. KHÔNG chứa mật khẩu.
+# Secret được truyền vào qua biến môi trường (UAT/PROD lấy từ Vault).
+server:
+  port: 8085
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  application:
+    name: order-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8083/.well-known/jwks.json}
+          issuer-uri: flower-shop-identity
+          audiences: flower-shop-api
+
+order:
+  rules:
+    pending-ttl: 60m          # shop phải gọi khách xác nhận trong 60 phút, quá thì đơn tự hủy
+    hold-buffer: 10m          # inventory giữ hàng 70 phút: đơn luôn hủy trước khi phiếu giữ hết hạn
+    min-lead-time: 2h         # đặt trước ít nhất 2 giờ so với đầu khung giờ giao
+    max-advance-days: 7       # hoa tươi: chỉ nhận đặt trước tối đa 7 ngày
+    shipping-fee: 30000
+    currency: VND
+  jobs:
+    enabled: true
+    batch-size: 100
+    interval-ms: 60000
+  # Tài khoản client_credentials của order-service ở identity (quyền: customer:read, inventory:reserve)
+  service-client:
+    client-id: order-service
+    secret: ${ORDER_SERVICE_CLIENT_SECRET}
+  identity:
+    base-url: http://identity-service
+    connect-timeout: 2s
+    read-timeout: 3s
+  catalog:
+    base-url: http://catalog-service
+    connect-timeout: 2s
+    read-timeout: 3s
+  customer:
+    base-url: http://customer-service
+    connect-timeout: 2s
+    read-timeout: 3s
+  inventory:
+    base-url: http://inventory-service
+    connect-timeout: 2s
+    read-timeout: 5s
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"

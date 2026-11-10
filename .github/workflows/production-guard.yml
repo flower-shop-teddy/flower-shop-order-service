@@ -1,0 +1,27 @@
+# Nhánh production chỉ nhận Pull Request từ nhánh dev của CHÍNH repo này.
+# Ruleset của nhánh production bắt buộc job "only-from-dev" phải xanh thì mới merge được.
+name: Production guard
+
+on:
+  pull_request:
+    branches: [production]
+
+permissions: {}
+
+jobs:
+  only-from-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chỉ cho merge từ dev
+        # Đưa tên nhánh vào biến môi trường, KHÔNG nhúng thẳng ${{ }} vào script:
+        # tên nhánh do người mở PR đặt (repo public), nhúng thẳng sẽ bị chèn lệnh.
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REF" != "dev" ] || [ "$HEAD_REPO" != "$THIS_REPO" ]; then
+            echo "::error::production chỉ nhận PR từ nhánh dev của $THIS_REPO (PR này từ $HEAD_REPO:$HEAD_REF)"
+            exit 1
+          fi
+          echo "OK: PR từ dev"

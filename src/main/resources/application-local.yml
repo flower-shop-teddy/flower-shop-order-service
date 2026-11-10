@@ -1,0 +1,21 @@
+# CHỈ dùng trên máy dev. Chạy với profile: local
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/order_db
+    username: order_user
+    password: order_pass_local
+
+order:
+  service-client:
+    # Phải khớp secret của client order-service trong application-local.yml của identity-service
+    secret: ${ORDER_SERVICE_CLIENT_SECRET:order-service-local-secret-0123456789}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    com.flowershop: DEBUG

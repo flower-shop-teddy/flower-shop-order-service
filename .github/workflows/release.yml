@@ -1,0 +1,33 @@
+# Release service thành Docker image trên GHCR:
+#   PR dev -> production  : job release-check (dry-run, quyền chỉ đọc) -> lộ lỗi trước khi merge
+#   merge vào production  : job release -> push image ghcr.io/<repo>:X.Y.Z, tag vX.Y.Z, GitHub Release
+name: Release
+
+on:
+  pull_request:
+    branches: [production]
+  push:
+    branches: [production]
+
+concurrency:
+  group: release-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  release-check:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      packages: read
+    uses: flower-shop-teddy/flower-shop-platform/.github/workflows/service-release.yml@dev
+    with:
+      dry-run: true
+
+  release:
+    if: github.event_name == 'push'
+    permissions:
+      contents: write   # tạo tag + GitHub Release
+      packages: write   # push image lên GHCR
+    uses: flower-shop-teddy/flower-shop-platform/.github/workflows/service-release.yml@dev
+    with:
+      dry-run: false
