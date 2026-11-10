@@ -71,7 +71,7 @@ public class CustomerOrder {
     @Column(nullable = false, length = 3, updatable = false)
     private String currency;
 
-    @Column(name = "recipient_name", nullable = false, length = 100, updatable = false)
+    @Column(name = "recipient_name", nullable = false, length = 150, updatable = false)
     private String recipientName;
 
     @Column(name = "recipient_phone", nullable = false, length = 10, updatable = false)
@@ -86,7 +86,7 @@ public class CustomerOrder {
     @Column(nullable = false, length = 100, updatable = false)
     private String province;
 
-    @Column(name = "address_note", updatable = false)
+    @Column(name = "address_note", length = 500, updatable = false)
     private String addressNote;
 
     @Column(name = "delivery_date", nullable = false, updatable = false)
