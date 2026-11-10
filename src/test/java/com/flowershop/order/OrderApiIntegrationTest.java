@@ -227,6 +227,17 @@ class OrderApiIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void place_acceptsLongestAddressThatAddressBookAllows() throws Exception {
+        // Sổ địa chỉ cho phép tên người nhận 150 ký tự, ghi chú 500 ký tự: bản chụp trong đơn phải chứa được
+        given(customers.findAddress(anyLong(), anyLong())).willReturn(new CustomerOrder.Recipient(
+                "N".repeat(150), "0987654321", "A".repeat(255), "W".repeat(100), "P".repeat(100), "G".repeat(500)));
+
+        place(key(), Map.of("ROSE-RED-10", 1), tomorrow(), DeliverySlot.MORNING)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.recipient.name").value("N".repeat(150)));
+    }
+
     // ---------------------------------------------------------------- khách chỉ thấy đơn của mình
 
     @Test
